@@ -1,0 +1,44 @@
+<?php
+
+function buzzer_menu() {
+  $items['buzzer/response'] = array(
+    'page callback' => 'buzzer_receive_voice_response', 
+    'access callback' => TRUE, 
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Callback for incoming voice calls.
+ */
+function buzzer_twilio_voice_incoming() {
+	echo '
+	<Response>
+    <Gather action="/buzzer/response" method="GET">
+      <Say>
+        Please enter your account number, followed by the pound sign
+      </Say>
+    </Gather>
+    <Say>We didn\'t receive any input. Goodbye!</Say>
+  </Response>';
+}
+
+/**
+ * Processes a buzzer response
+ */
+function buzzer_receive_voice_response() {
+  if (!empty($_GET['Digits'])) {
+    if ($_GET['Digits'] == 123) {
+    echo '
+    	<Response>
+        <Say>
+            Confirmed
+        </Say>
+        <Play loop="3">
+          http://automation.arvinsingla.com/sites/automation.arvinsingla.com/files/DTMF-9.mp3
+        </Play>
+      </Response>';
+    }
+  }
+}
