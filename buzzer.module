@@ -1,9 +1,16 @@
 <?php
+/**
+ * @file
+ * Buzzer module file
+ */
 
+/**
+ * Implementation of hook_menu().
+ */
 function buzzer_menu() {
   $items['buzzer/response'] = array(
-    'page callback' => 'buzzer_receive_voice_response', 
-    'access callback' => TRUE, 
+    'page callback' => 'buzzer_receive_voice_response',
+    'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
   return $items;
@@ -13,8 +20,8 @@ function buzzer_menu() {
  * Callback for incoming voice calls.
  */
 function buzzer_twilio_voice_incoming() {
-	echo '
-	<Response>
+  echo '
+  <Response>
     <Gather action="/buzzer/response" method="GET">
       <Say>
         Please enter your account number, followed by the pound sign
@@ -25,13 +32,13 @@ function buzzer_twilio_voice_incoming() {
 }
 
 /**
- * Processes a buzzer response
+ * Processes a buzzer response.
  */
 function buzzer_receive_voice_response() {
   if (!empty($_GET['Digits'])) {
     if ($_GET['Digits'] == 123) {
-    echo '
-    	<Response>
+      echo '
+      <Response>
         <Say>
             Confirmed
         </Say>
