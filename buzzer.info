@@ -1,3 +1,4 @@
 name = Buzzer controller
 description = Controls the home buzzer system.
 core = 7.x
+dependencies[] = twilio
