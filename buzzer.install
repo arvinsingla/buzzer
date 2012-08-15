@@ -1,0 +1,29 @@
+<?php
+/**
+ * @file
+ * Install and uninstall functions for the buzzer module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function buzzer_install() {
+  // Set the buzzer variables
+  variable_set('buzzer_passcode', 1234);  
+  variable_set('buzzer_command_say_request', "Please enter your password, followed by the pound sign");
+  variable_set('buzzer_command_say_response', "Confirmed");
+  variable_set('buzzer_command_say_failure', "We didn't receive any input. Goodbye!");
+  variable_set('buzzer_dtmf', 9);
+}
+
+/**
+ * Implements hook_install().
+ */
+function buzzer_uninstall() {
+  // Delete the buzzer variables
+  variable_del('buzzer_passcode');  
+  variable_del('buzzer_command_say_request');
+  variable_del('buzzer_command_say_response');
+  variable_del('buzzer_command_say_failure');
+  variable_del('buzzer_dtmf');
+}

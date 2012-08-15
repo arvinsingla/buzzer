@@ -8,6 +8,14 @@
  * Implementation of hook_menu().
  */
 function buzzer_menu() {
+  $items['admin/config/system/buzzer'] = array(
+    'title' => 'Buzzer',
+    'description' => 'Administer your buzzer settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('buzzer_admin_form'),
+    'access arguments' => array('access administration pages'),
+    'file' => 'buzzer.admin.inc',
+  );
   $items['buzzer/response'] = array(
     'page callback' => 'buzzer_receive_voice_response',
     'access callback' => TRUE,
@@ -20,14 +28,13 @@ function buzzer_menu() {
  * Callback for incoming voice calls.
  */
 function buzzer_twilio_voice_incoming() {
+  $passcode = variable_get('buzzer_passcode');
   echo '
   <Response>
-    <Gather action="/buzzer/response" method="GET">
-      <Say>
-        Please enter your account number, followed by the pound sign
-      </Say>
+    <Gather action="' . base_path() . 'buzzer/response" method="GET" numDigits="' . strlen($passcode) . '">
+      <Say>' . check_plain(variable_get('buzzer_command_say_request')) . '</Say>
     </Gather>
-    <Say>We didn\'t receive any input. Goodbye!</Say>
+    <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
   </Response>';
 }
 
@@ -36,15 +43,19 @@ function buzzer_twilio_voice_incoming() {
  */
 function buzzer_receive_voice_response() {
   if (!empty($_GET['Digits'])) {
-    if ($_GET['Digits'] == 123) {
+    $passcode = variable_get('buzzer_passcode');
+    if ($_GET['Digits'] == (int) $passcode) {
+      $tone = 'http://www.dialabc.com/i/cache/dtmfgen/wavpcm44.300/' . variable_get('buzzer_dtmf') . '.wav';
       echo '
       <Response>
-        <Say>
-            Confirmed
-        </Say>
-        <Play loop="3">
-          http://automation.arvinsingla.com/sites/automation.arvinsingla.com/files/DTMF-9.mp3
-        </Play>
+        <Say>' . check_plain(variable_get('buzzer_command_say_response')) . '</Say>
+        <Play loop="3">' . $tone . '</Play>
+      </Response>';
+    }
+    else {
+      echo '
+      <Response>
+        <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
       </Response>';
     }
   }
