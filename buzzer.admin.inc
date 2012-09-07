@@ -99,7 +99,7 @@ function buzzer_admin_form($form, &$form_state) {
  */
 function buzzer_admin_form_validate($form, &$form_state) {
   $values = $form_state['values'];
-  switch($values['buzzer_mode']) {
+  switch ($values['buzzer_mode']) {
     case 'global':{
       if (empty($values['buzzer_code']) || !is_numeric($values['buzzer_code']) || strlen($values['buzzer_code']) > 4) {
         form_set_error('buzzer_code', t('Buzzer code must be a number up to 4 digits in length'));

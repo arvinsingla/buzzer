@@ -30,8 +30,8 @@ function buzzer_menu() {
  */
 function buzzer_twilio_voice_incoming() {
   $mode = variable_get('buzzer_mode');
-  switch($mode) {
-    case 'global': {
+  switch ($mode) {
+    case 'global':{
       $passcode = variable_get('buzzer_passcode');
       echo '
       <Response>
@@ -42,7 +42,7 @@ function buzzer_twilio_voice_incoming() {
       </Response>';
       break;
     }
-    case 'user': {
+    case 'user':{
       echo '
       <Response>
         <Gather action="' . base_path() . 'buzzer/user" method="GET">
@@ -64,12 +64,12 @@ function buzzer_twilio_voice_incoming() {
  *   The uid value to authenticate a passcode against
  */
 function buzzer_receive_response($mode, $val = FALSE) {
-  
-  switch($mode) {
-    case 'auth': {
+
+  switch ($mode) {
+    case 'auth':{
       if (!empty($_GET['Digits'])) {
         // If we have a user id value get the users passcode, otherwise get the
-        // global passcode
+        // global passcode.
         $passcode = !empty($val) ? buzzer_get_user_code($val) : variable_get('buzzer_passcode');
         // If the passcode matches the user submitted value respond with a tone.
         if ($_GET['Digits'] == (int) $passcode) {
@@ -90,7 +90,7 @@ function buzzer_receive_response($mode, $val = FALSE) {
       }
       break;
     }
-    case 'user': {
+    case 'user':{
       if (!empty($_GET['Digits'])) {
         // If we load a valid user from the digits received ask them for a
         // passcode for authentication.
@@ -102,7 +102,8 @@ function buzzer_receive_response($mode, $val = FALSE) {
             </Gather>
             <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
           </Response>';
-        } else {
+        }
+        else {
           // Otherwise respond in failure.
           echo '
           <Response>

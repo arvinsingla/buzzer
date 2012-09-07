@@ -8,7 +8,7 @@
  * Implements hook_install().
  */
 function buzzer_install() {
-  // Set the buzzer variables
+  // Set the buzzer variables.
   variable_set('buzzer_mode', 'global');
   variable_set('buzzer_code', '1234');
   variable_set('buzzer_command_say_userid', "Please enter your user I D followed by the pound key");
@@ -22,7 +22,7 @@ function buzzer_install() {
  * Implements hook_install().
  */
 function buzzer_uninstall() {
-  // Delete the buzzer variables
+  // Delete the buzzer variables.
   variable_del('buzzer_mode');
   variable_del('buzzer_code');
   variable_del('buzzer_command_say_userid');
