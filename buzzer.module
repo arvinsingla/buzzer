@@ -16,15 +16,10 @@ function buzzer_menu() {
     'access arguments' => array('access administration pages'),
     'file' => 'buzzer.admin.inc',
   );
-  $items['buzzer/authenticate/%/%'] = array(
-    'page callback' => 'buzzer_receive_authenticate_response',
+  $items['buzzer/%/%'] = array(
+    'page callback' => 'buzzer_receive_response',
     'access callback' => TRUE,
-    'page arguments' => array(2, 3),
-    'type' => MENU_CALLBACK,
-  );
-  $items['buzzer/user'] = array(
-    'page callback' => 'buzzer_receive_user_response',
-    'access callback' => TRUE,
+    'page arguments' => array(1, 2),
     'type' => MENU_CALLBACK,
   );
   return $items;
@@ -40,7 +35,7 @@ function buzzer_twilio_voice_incoming() {
       $passcode = variable_get('buzzer_passcode');
       echo '
       <Response>
-        <Gather action="' . base_path() . 'buzzer/authenticate/auth" method="GET" numDigits="' . strlen($passcode) . '">
+        <Gather action="' . base_path() . 'buzzer/auth" method="GET" numDigits="' . strlen($passcode) . '">
           <Say>' . check_plain(variable_get('buzzer_command_say_password')) . '</Say>
         </Gather>
         <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
@@ -50,7 +45,7 @@ function buzzer_twilio_voice_incoming() {
     case 'user': {
       echo '
       <Response>
-        <Gather action="' . base_path() . 'buzzer/authenticate/user" method="GET">
+        <Gather action="' . base_path() . 'buzzer/user" method="GET">
           <Say>' . check_plain(variable_get('buzzer_command_say_userid')) . '</Say>
         </Gather>
         <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
@@ -62,13 +57,21 @@ function buzzer_twilio_voice_incoming() {
 
 /**
  * Processes a buzzer response.
+ *
+ * @param string $mode
+ *   The type of response we are receiving
+ * @param int $val
+ *   The uid value to authenticate a passcode against
  */
-function buzzer_receive_authenticate_response($mode, $val = FALSE) {
+function buzzer_receive_response($mode, $val = FALSE) {
   
   switch($mode) {
     case 'auth': {
       if (!empty($_GET['Digits'])) {
+        // If we have a user id value get the users passcode, otherwise get the
+        // global passcode
         $passcode = !empty($val) ? buzzer_get_user_code($val) : variable_get('buzzer_passcode');
+        // If the passcode matches the user submitted value respond with a tone.
         if ($_GET['Digits'] == (int) $passcode) {
           $tone = 'http://www.dialabc.com/i/cache/dtmfgen/wavpcm44.300/' . variable_get('buzzer_dtmf') . '.wav';
           echo '
@@ -77,6 +80,7 @@ function buzzer_receive_authenticate_response($mode, $val = FALSE) {
             <Play loop="3">' . $tone . '</Play>
           </Response>';
         }
+        // Otherwise respond in failure.
         else {
           echo '
           <Response>
@@ -84,18 +88,22 @@ function buzzer_receive_authenticate_response($mode, $val = FALSE) {
           </Response>';
         }
       }
+      break;
     }
     case 'user': {
       if (!empty($_GET['Digits'])) {
+        // If we load a valid user from the digits received ask them for a
+        // passcode for authentication.
         if ($account = user_load($_GET['Digits'])) {
           echo '
           <Response>
-            <Gather action="' . base_path() . 'buzzer/authenticate/global/' . $account->uid . '" method="GET">
+            <Gather action="' . base_path() . 'buzzer/auth/' . $account->uid . '" method="GET">
               <Say>' . check_plain(variable_get('buzzer_command_say_userid')) . '</Say>
             </Gather>
             <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
           </Response>';
         } else {
+          // Otherwise respond in failure.
           echo '
           <Response>
             <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
@@ -105,6 +113,34 @@ function buzzer_receive_authenticate_response($mode, $val = FALSE) {
       break;
     }
   }
+}
+
+/**
+ * Retrieve a users buzzer code.
+ *
+ * @param int $uid
+ *   ID of the user whose code we are retrieveing.
+ *
+ * @return mixed
+ *   Integer value of the buzzer or FALSE
+ */
+function buzzer_get_user_code($uid) {
+  // If we have a numeric id try to retrieve the code.
+  if (is_numeric($uid)) {
+    $result = db_select('buzzer_user', 'u')
+      ->fields('u', array('uid', 'code'))
+    ->condition('uid', array($uid), 'IN')
+    ->execute();
+    foreach ($result as $record) {
+      if (!empty($record->uid)) {
+        $code = $record->code;
+      }
+    }
+  }
+  if (!empty($code)) {
+    return $code;
+  }
+  return FALSE;
 }
 
 /**
@@ -193,34 +229,6 @@ function buzzer_user_save(&$edit, $account, $category) {
     // Ensure any old codes are removed if nothing is selected.
     buzzer_user_delete_code($account->uid);
   }
-}
-
-/**
- * Retrieve a users buzzer code.
- *
- * @param int $uid
- *   ID of the user whose code we are retrieveing.
- *
- * @return mixed
- *   Integer value of the buzzer or FALSE
- */
-function buzzer_get_user_code($uid) {
-  // If we have a numeric id try to retrieve the code.
-  if (is_numeric($uid)) {
-    $result = db_select('buzzer_user', 'u')
-      ->fields('u', array('uid', 'code'))
-    ->condition('uid', array($uid), 'IN')
-    ->execute();
-    foreach ($result as $record) {
-      if (!empty($record->uid)) {
-        $code = $record->code;
-      }
-    }
-  }
-  if (!empty($code)) {
-    return $code;
-  }
-  return FALSE;
 }
 
 /**
