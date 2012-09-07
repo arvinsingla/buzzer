@@ -35,7 +35,7 @@ function buzzer_twilio_voice_incoming() {
       $passcode = variable_get('buzzer_passcode');
       echo '
       <Response>
-        <Gather action="' . base_path() . 'buzzer/auth" method="GET" numDigits="' . strlen($passcode) . '">
+        <Gather action="' . base_path() . 'buzzer/auth/0" method="GET" numDigits="' . strlen($passcode) . '">
           <Say>' . check_plain(variable_get('buzzer_command_say_password')) . '</Say>
         </Gather>
         <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
@@ -45,7 +45,7 @@ function buzzer_twilio_voice_incoming() {
     case 'user':{
       echo '
       <Response>
-        <Gather action="' . base_path() . 'buzzer/user" method="GET">
+        <Gather action="' . base_path() . 'buzzer/user/0" method="GET">
           <Say>' . check_plain(variable_get('buzzer_command_say_userid')) . '</Say>
         </Gather>
         <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
