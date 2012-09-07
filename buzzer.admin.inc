@@ -9,37 +9,79 @@
  */
 function buzzer_admin_form($form, &$form_state) {
 
-  $form['buzzer_passcode'] = array(
-    '#type' => 'textfield',
+  $form['buzzer_mode'] = array(
+    '#type' => 'select',
     '#required' => TRUE,
-    '#title' => t('Buzzer passcode'),
+    '#title' => t('Buzzer mode'),
+    '#options' => array(
+      'global' => t('Global code'),
+      'user' => t('User codes'),
+    ),
+    '#default_value' => variable_get('buzzer_mode'),
+    '#description' => t('Select if you would like to use per user buzzer codes or a global buzzer code'),
+  );
+
+  $form['buzzer_code'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Global buzzer passcode'),
     '#maxlength' => 4,
     '#maxlen' => 4,
     '#minlen' => 1,
-    '#default_value' => variable_get('buzzer_passcode'),
+    '#default_value' => variable_get('buzzer_code'),
     '#description' => t('Enter a number up to 4 digits in length'),
-    '#element_validate' => array('buzzer_passcode_validate'),
+    '#states' => array(
+      'visible' => array(
+        '#edit-buzzer-mode' => array(
+          'value' => 'global'
+        )
+      ),
+      'required' => array(
+        '#edit-buzzer-mode' => array(
+          'value' => 'global'
+        )
+      ),
+    ),
   );
-  $form['buzzer_command_say_request'] = array(
+
+  $form['buzzer_command_say_userid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('User id request'),
+    '#default_value' => variable_get('buzzer_command_say_userid'),
+    '#description' => t('Enter the text to instruct the user for their user id'),
+    '#states' => array(
+      'visible' => array(
+        '#edit-buzzer-mode' => array(
+          'value' => 'user'
+        )
+      ),
+      'required' => array(
+        '#edit-buzzer-mode' => array(
+          'value' => 'user'
+        )
+      ),
+    ),
+  );
+
+  $form['buzzer_command_say_password'] = array(
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#title' => t('Greeting response'),
-    '#default_value' => variable_get('buzzer_command_say_request'),
-    '#description' => t('Enter the text you would like to greet the user with'),
+    '#title' => t('Password request'),
+    '#default_value' => variable_get('buzzer_command_say_password'),
+    '#description' => t('Enter the text to instruct the user for their password'),
   );
-  $form['buzzer_command_say_response'] = array(
+  $form['buzzer_command_say_confirmation'] = array(
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#title' => t('Response on success text'),
-    '#default_value' => variable_get('buzzer_command_say_response'),
-    '#description' => t('Enter the text for the response to the end user on success'),
+    '#title' => t('Response on success'),
+    '#default_value' => variable_get('buzzer_command_say_confirmation'),
+    '#description' => t('Enter the text to confirm success'),
   );
   $form['buzzer_command_say_failure'] = array(
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#title' => t('Response on failure text'),
+    '#title' => t('Response on failure'),
     '#default_value' => variable_get('buzzer_command_say_failure'),
-    '#description' => t('Enter the text for the response to the end user on failure'),
+    '#description' => t('Enter the text for a failure response'),
   );
   $form['buzzer_dtmf'] = array(
     '#type' => 'select',
@@ -53,10 +95,22 @@ function buzzer_admin_form($form, &$form_state) {
 }
 
 /**
- * Element validator for the buzzer code.
+ * Validation function for the buzzer_admin_form.
  */
-function buzzer_passcode_validate($element, &$form_state, $form) {
-  if (!is_numeric($element['#value']) || strlen($element['#value']) > 4) {
-    form_error($element, t('Buzzer code must be a number up to 4 digits in length'));
+function buzzer_admin_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  switch($values['buzzer_mode']) {
+    case 'global':{
+      if (empty($values['buzzer_code']) || !is_numeric($values['buzzer_code']) || strlen($values['buzzer_code']) > 4) {
+        form_set_error('buzzer_code', t('Buzzer code must be a number up to 4 digits in length'));
+      }
+      break;
+    }
+    case 'user':{
+      if (empty($values['buzzer_command_say_userid'])) {
+        form_set_error('buzzer_command_say_userid', t('User id request field is required'));
+      }
+      break;
+    }
   }
 }

@@ -9,9 +9,11 @@
  */
 function buzzer_install() {
   // Set the buzzer variables
-  variable_set('buzzer_passcode', 1234);  
-  variable_set('buzzer_command_say_request', "Please enter your password, followed by the pound sign");
-  variable_set('buzzer_command_say_response', "Confirmed");
+  variable_set('buzzer_mode', 'global');
+  variable_set('buzzer_code', '1234');
+  variable_set('buzzer_command_say_userid', "Please enter your user I D followed by the pound key");
+  variable_set('buzzer_command_say_password', "Please enter your password");
+  variable_set('buzzer_command_say_confirmation', "Confirmed");
   variable_set('buzzer_command_say_failure', "We didn't receive any input. Goodbye!");
   variable_set('buzzer_dtmf', 9);
 }
@@ -21,9 +23,35 @@ function buzzer_install() {
  */
 function buzzer_uninstall() {
   // Delete the buzzer variables
-  variable_del('buzzer_passcode');  
-  variable_del('buzzer_command_say_request');
-  variable_del('buzzer_command_say_response');
+  variable_del('buzzer_mode');
+  variable_del('buzzer_code');
+  variable_del('buzzer_command_say_userid');
+  variable_del('buzzer_command_say_password');
+  variable_del('buzzer_command_say_confirmation');
   variable_del('buzzer_command_say_failure');
   variable_del('buzzer_dtmf');
+  field_delete_field('field_buzzer_code');
+}
+
+/**
+ * Implements hook_schema().
+ */
+function buzzer_schema() {
+  $schema['buzzer_user'] = array(
+    'fields' => array(
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'code' => array(
+        'type' => 'varchar',
+        'not null' => TRUE,
+        'length' => 4,
+      ),
+    ),
+    'primary key' => array('code'),
+    'indexes' => array('uid' => array('uid')),
+  );
+  return $schema;
 }

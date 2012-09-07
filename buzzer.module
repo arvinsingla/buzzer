@@ -16,8 +16,14 @@ function buzzer_menu() {
     'access arguments' => array('access administration pages'),
     'file' => 'buzzer.admin.inc',
   );
-  $items['buzzer/response'] = array(
-    'page callback' => 'buzzer_receive_voice_response',
+  $items['buzzer/authenticate/%/%'] = array(
+    'page callback' => 'buzzer_receive_authenticate_response',
+    'access callback' => TRUE,
+    'page arguments' => array(2, 3),
+    'type' => MENU_CALLBACK,
+  );
+  $items['buzzer/user'] = array(
+    'page callback' => 'buzzer_receive_user_response',
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
@@ -25,38 +31,206 @@ function buzzer_menu() {
 }
 
 /**
- * Callback for incoming voice calls.
+ * Implementation of hook_twilio_voice_incoming().
  */
 function buzzer_twilio_voice_incoming() {
-  $passcode = variable_get('buzzer_passcode');
-  echo '
-  <Response>
-    <Gather action="' . base_path() . 'buzzer/response" method="GET" numDigits="' . strlen($passcode) . '">
-      <Say>' . check_plain(variable_get('buzzer_command_say_request')) . '</Say>
-    </Gather>
-    <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
-  </Response>';
+  $mode = variable_get('buzzer_mode');
+  switch($mode) {
+    case 'global': {
+      $passcode = variable_get('buzzer_passcode');
+      echo '
+      <Response>
+        <Gather action="' . base_path() . 'buzzer/authenticate/auth" method="GET" numDigits="' . strlen($passcode) . '">
+          <Say>' . check_plain(variable_get('buzzer_command_say_password')) . '</Say>
+        </Gather>
+        <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
+      </Response>';
+      break;
+    }
+    case 'user': {
+      echo '
+      <Response>
+        <Gather action="' . base_path() . 'buzzer/authenticate/user" method="GET">
+          <Say>' . check_plain(variable_get('buzzer_command_say_userid')) . '</Say>
+        </Gather>
+        <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
+      </Response>';
+      break;
+    }
+  }
 }
 
 /**
  * Processes a buzzer response.
  */
-function buzzer_receive_voice_response() {
-  if (!empty($_GET['Digits'])) {
-    $passcode = variable_get('buzzer_passcode');
-    if ($_GET['Digits'] == (int) $passcode) {
-      $tone = 'http://www.dialabc.com/i/cache/dtmfgen/wavpcm44.300/' . variable_get('buzzer_dtmf') . '.wav';
-      echo '
-      <Response>
-        <Say>' . check_plain(variable_get('buzzer_command_say_response')) . '</Say>
-        <Play loop="3">' . $tone . '</Play>
-      </Response>';
+function buzzer_receive_authenticate_response($mode, $val = FALSE) {
+  
+  switch($mode) {
+    case 'auth': {
+      if (!empty($_GET['Digits'])) {
+        $passcode = !empty($val) ? buzzer_get_user_code($val) : variable_get('buzzer_passcode');
+        if ($_GET['Digits'] == (int) $passcode) {
+          $tone = 'http://www.dialabc.com/i/cache/dtmfgen/wavpcm44.300/' . variable_get('buzzer_dtmf') . '.wav';
+          echo '
+          <Response>
+            <Say>' . check_plain(variable_get('buzzer_command_say_response')) . '</Say>
+            <Play loop="3">' . $tone . '</Play>
+          </Response>';
+        }
+        else {
+          echo '
+          <Response>
+            <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
+          </Response>';
+        }
+      }
     }
-    else {
-      echo '
-      <Response>
-        <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
-      </Response>';
+    case 'user': {
+      if (!empty($_GET['Digits'])) {
+        if ($account = user_load($_GET['Digits'])) {
+          echo '
+          <Response>
+            <Gather action="' . base_path() . 'buzzer/authenticate/global/' . $account->uid . '" method="GET">
+              <Say>' . check_plain(variable_get('buzzer_command_say_userid')) . '</Say>
+            </Gather>
+            <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
+          </Response>';
+        } else {
+          echo '
+          <Response>
+            <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
+          </Response>';
+        }
+      }
+      break;
     }
   }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function buzzer_form_user_profile_form_alter(&$form, &$form_state, $form_id) {
+
+  // Only show the form elements if we are in user mode.
+  if (variable_get('buzzer_mode') == 'user') {
+    // Set the default code if the user has one.
+    $default_code = isset($form['#user']->buzzer_code) ? $form['#user']->buzzer_code : '';
+
+    // Create the buzzer form element.
+    $buzzer_element = array(
+      '#type' => 'textfield',
+      '#description' => t('Enter the buzzer code for this user'),
+      '#title' => t('Buzzer code'),
+      '#default_value' => $default_code,
+      '#size' => 20,
+      '#maxlength' => 4,
+      '#required' => FALSE,
+      '#weight' => -5,
+      '#element_validate' => array('buzzer_user_code_validate'),
+    );
+
+    // Add the field to the form.
+    $form['buzzer'] = $buzzer_element;
+  }
+}
+
+/**
+ * Element validation of the user buzzer code field.
+ */
+function buzzer_user_code_validate($element, &$form_state, $form) {
+  if (!empty($element['#value']) && (!is_numeric($element['#value']) || strlen($element['#value']) != 4 || $element['#value'] == 0)) {
+    form_error($element, t('Buzzer number must enter a non 0 four digit integer'));
+  }
+}
+
+/**
+ * Implements hook_user_load().
+ */
+function buzzer_user_load($users) {
+  foreach ($users as $user) {
+    $code = buzzer_get_user_code($user->uid);
+    if ($code) {
+      $user->buzzer_code = $code;
+    }
+  }
+}
+
+/**
+ * Implements hook_user_insert().
+ */
+function buzzer_user_insert(&$edit, $account, $category) {
+  buzzer_user_save(&$edit, $account, $category);
+}
+
+/**
+ * Implements hook_user_update().
+ */
+function buzzer_user_update(&$edit, $account, $category) {
+  buzzer_user_save(&$edit, $account, $category);
+}
+
+/**
+ * Implements hook_user_delete().
+ */
+function buzzer_user_delete($account) {
+  buzzer_user_delete_code($account->uid);
+}
+
+/**
+ * Implements hook_user_save().
+ */
+function buzzer_user_save(&$edit, $account, $category) {
+  if (!empty($edit['buzzer'])) {
+    $code = array(
+      'uid' => $account->uid,
+      'code' => $edit['buzzer'],
+    );
+    $primary_keys = array();
+    drupal_write_record('buzzer_user', $code, $primary_keys);
+  }
+  else {
+    // Ensure any old codes are removed if nothing is selected.
+    buzzer_user_delete_code($account->uid);
+  }
+}
+
+/**
+ * Retrieve a users buzzer code.
+ *
+ * @param int $uid
+ *   ID of the user whose code we are retrieveing.
+ *
+ * @return mixed
+ *   Integer value of the buzzer or FALSE
+ */
+function buzzer_get_user_code($uid) {
+  // If we have a numeric id try to retrieve the code.
+  if (is_numeric($uid)) {
+    $result = db_select('buzzer_user', 'u')
+      ->fields('u', array('uid', 'code'))
+    ->condition('uid', array($uid), 'IN')
+    ->execute();
+    foreach ($result as $record) {
+      if (!empty($record->uid)) {
+        $code = $record->code;
+      }
+    }
+  }
+  if (!empty($code)) {
+    return $code;
+  }
+  return FALSE;
+}
+
+/**
+ * Delete a users buzzer code.
+ *
+ * @param int $uid
+ *   User id
+ */
+function buzzer_user_delete_code($uid) {
+  db_delete('buzzer_user')
+    ->condition('uid', $uid)
+    ->execute();
 }
