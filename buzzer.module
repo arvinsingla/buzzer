@@ -76,7 +76,7 @@ function buzzer_receive_response($mode, $val = FALSE) {
           $tone = 'http://www.dialabc.com/i/cache/dtmfgen/wavpcm44.300/' . variable_get('buzzer_dtmf') . '.wav';
           echo '
           <Response>
-            <Say>' . check_plain(variable_get('buzzer_command_say_response')) . '</Say>
+            <Say>' . check_plain(variable_get('buzzer_command_say_confirmation')) . '</Say>
             <Play loop="3">' . $tone . '</Play>
           </Response>';
         }
