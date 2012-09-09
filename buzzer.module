@@ -32,7 +32,7 @@ function buzzer_twilio_voice_incoming() {
   $mode = variable_get('buzzer_mode');
   switch ($mode) {
     case 'global':{
-      $passcode = variable_get('buzzer_passcode');
+      $passcode = variable_get('buzzer_code');
       echo '
       <Response>
         <Gather action="' . base_path() . 'buzzer/auth/0" method="GET" numDigits="' . strlen($passcode) . '">
@@ -70,7 +70,7 @@ function buzzer_receive_response($mode, $val = FALSE) {
       if (!empty($_GET['Digits'])) {
         // If we have a user id value get the users passcode, otherwise get the
         // global passcode.
-        $passcode = !empty($val) ? buzzer_get_user_code($val) : variable_get('buzzer_passcode');
+        $passcode = !empty($val) ? buzzer_get_user_code($val) : variable_get('buzzer_code');
         // If the passcode matches the user submitted value respond with a tone.
         if ($_GET['Digits'] == (int) $passcode) {
           $tone = 'http://www.dialabc.com/i/cache/dtmfgen/wavpcm44.300/' . variable_get('buzzer_dtmf') . '.wav';
@@ -97,8 +97,8 @@ function buzzer_receive_response($mode, $val = FALSE) {
         if ($account = user_load($_GET['Digits'])) {
           echo '
           <Response>
-            <Gather action="' . base_path() . 'buzzer/auth/' . $account->uid . '" method="GET">
-              <Say>' . check_plain(variable_get('buzzer_command_say_userid')) . '</Say>
+            <Gather action="' . base_path() . 'buzzer/auth/' . $account->uid . '" method="GET" numDigits="' . strlen($account->buzzer_code) . '">
+              <Say>' . check_plain(variable_get('buzzer_command_say_password')) . '</Say>
             </Gather>
             <Say>' . check_plain(variable_get('buzzer_command_say_failure')) . '</Say>
           </Response>';

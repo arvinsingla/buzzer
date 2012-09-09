@@ -14,7 +14,7 @@ function buzzer_install() {
   variable_set('buzzer_command_say_userid', "Please enter your user I D followed by the pound key");
   variable_set('buzzer_command_say_password', "Please enter your password");
   variable_set('buzzer_command_say_confirmation', "Confirmed");
-  variable_set('buzzer_command_say_failure', "We didn't receive any input. Goodbye!");
+  variable_set('buzzer_command_say_failure', "Your input was incorrect or you waited to long. Goodbye!");
   variable_set('buzzer_dtmf', 9);
 }
 
