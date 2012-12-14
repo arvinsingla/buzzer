@@ -52,6 +52,15 @@ function buzzer_twilio_voice_incoming() {
       </Response>';
       break;
     }
+    case 'none':{
+      $tone = 'http://www.dialabc.com/i/cache/dtmfgen/wavpcm44.300/' . variable_get('buzzer_dtmf') . '.wav';
+      echo '
+      <Response>
+        <Say>' . check_plain(variable_get('buzzer_command_say_confirmation')) . '</Say>
+        <Play loop="3">' . $tone . '</Play>
+      </Response>';
+      break;
+    }
   }
 }
 

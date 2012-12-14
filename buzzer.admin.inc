@@ -14,11 +14,12 @@ function buzzer_admin_form($form, &$form_state) {
     '#required' => TRUE,
     '#title' => t('Buzzer mode'),
     '#options' => array(
+      'none' => t('No code (automatic entry)'),
       'global' => t('Global code'),
       'user' => t('User codes'),
     ),
     '#default_value' => variable_get('buzzer_mode'),
-    '#description' => t('Select if you would like to use per user buzzer codes or a global buzzer code'),
+    '#description' => t('Select the authentication mode you would like buzzer to operate on'),
   );
 
   $form['buzzer_code'] = array(
@@ -68,6 +69,13 @@ function buzzer_admin_form($form, &$form_state) {
     '#title' => t('Password request'),
     '#default_value' => variable_get('buzzer_command_say_password'),
     '#description' => t('Enter the text to instruct the user for their password'),
+    '#states' => array(
+      'invisible' => array(
+        '#edit-buzzer-mode' => array(
+          'value' => 'none'
+        )
+      ),
+    ),
   );
   $form['buzzer_command_say_confirmation'] = array(
     '#type' => 'textfield',
@@ -75,6 +83,13 @@ function buzzer_admin_form($form, &$form_state) {
     '#title' => t('Response on success'),
     '#default_value' => variable_get('buzzer_command_say_confirmation'),
     '#description' => t('Enter the text to confirm success'),
+    '#states' => array(
+      'invisible' => array(
+        '#edit-buzzer-mode' => array(
+          'value' => 'none'
+        )
+      ),
+    ),
   );
   $form['buzzer_command_say_failure'] = array(
     '#type' => 'textfield',
@@ -82,6 +97,13 @@ function buzzer_admin_form($form, &$form_state) {
     '#title' => t('Response on failure'),
     '#default_value' => variable_get('buzzer_command_say_failure'),
     '#description' => t('Enter the text for a failure response'),
+    '#states' => array(
+      'invisible' => array(
+        '#edit-buzzer-mode' => array(
+          'value' => 'none'
+        )
+      ),
+    ),
   );
   $form['buzzer_dtmf'] = array(
     '#type' => 'select',
