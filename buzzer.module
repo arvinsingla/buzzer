@@ -56,8 +56,7 @@ function buzzer_twilio_voice_incoming() {
       $tone = 'http://www.dialabc.com/i/cache/dtmfgen/wavpcm44.300/' . variable_get('buzzer_dtmf') . '.wav';
       echo '
       <Response>
-        <Say>' . check_plain(variable_get('buzzer_command_say_confirmation')) . '</Say>
-        <Play loop="3">' . $tone . '</Play>
+        <Play loop="5">' . $tone . '</Play>
       </Response>';
       break;
     }
@@ -86,7 +85,7 @@ function buzzer_receive_response($mode, $val = FALSE) {
           echo '
           <Response>
             <Say>' . check_plain(variable_get('buzzer_command_say_confirmation')) . '</Say>
-            <Play loop="3">' . $tone . '</Play>
+            <Play loop="5">' . $tone . '</Play>
           </Response>';
         }
         // Otherwise respond in failure.
