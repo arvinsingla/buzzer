@@ -58,6 +58,7 @@ function buzzer_twilio_voice_incoming() {
       <Response>
         <Play loop="5">' . $tone . '</Play>
       </Response>';
+      buzzer_send_confirmation_sms();
       break;
     }
   }
@@ -87,6 +88,7 @@ function buzzer_receive_response($mode, $val = FALSE) {
             <Say>' . check_plain(variable_get('buzzer_command_say_confirmation')) . '</Say>
             <Play loop="5">' . $tone . '</Play>
           </Response>';
+          buzzer_send_confirmation_sms($val);
         }
         // Otherwise respond in failure.
         else {
@@ -121,6 +123,23 @@ function buzzer_receive_response($mode, $val = FALSE) {
       }
       break;
     }
+  }
+}
+
+/**
+ * Send a confirmation sms message
+ */
+function buzzer_send_confirmation_sms($uid = FALSE) {
+  if (variable_get('buzzer_sms')) {
+    $number = variable_get('buzzer_sms_number');
+    if ($uid) {
+      $account = user_load($uid);
+      $message = t("@name has entered the building", array('@name' => $account->name));
+    }
+    else {
+      $message = t("Someone has entered the building");
+    }
+    twilio_send($number, $message);
   }
 }
 

@@ -113,7 +113,41 @@ function buzzer_admin_form($form, &$form_state) {
     '#default_value' => variable_get('buzzer_dtmf'),
     '#description' => t('The DTMF tone to generate uppon success'),
   );
+  
+  $form['buzzer_sms'] = array(
+    '#type' => 'checkbox', 
+    '#title' => t('Send text message'),
+    '#default_value' => variable_get('buzzer_sms'),
+    '#description' => t('Send a text message to a specified number when someone enters'),
+  );
+  
+  $form['buzzer_sms_number'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Number'),
+    '#default_value' => variable_get('buzzer_sms_number'),
+    '#description' => t('Enter a phone number'),
+    '#element_validate' => array('buzzer_sms_number_validate'),
+    '#states' => array(
+      'invisible' => array(
+        ':input[name="buzzer_sms"]' => array('checked' => FALSE),
+      ),
+    ),
+  );
+  
   return system_settings_form($form);
+}
+
+/**
+ * Element validator for the phone number field.
+ */
+function buzzer_sms_number_validate($element, &$form_state, $form) {
+  if ($number = twilio_validate_number($element['#value'], FALSE)) {
+    $form_state['values']['twilio_number'] = $number;
+  }
+  else {
+    form_error($element, t('You must enter a valid 10 digit phone number'));
+  }
 }
 
 /**
