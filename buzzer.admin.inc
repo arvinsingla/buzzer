@@ -124,9 +124,9 @@ function buzzer_admin_form($form, &$form_state) {
   $form['buzzer_sms_number'] = array(
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#title' => t('Number'),
+    '#title' => t('SMS Number'),
     '#default_value' => variable_get('buzzer_sms_number'),
-    '#description' => t('Enter a phone number'),
+    '#description' => t('Enter the phone number to send a text message upon success'),
     '#element_validate' => array('buzzer_sms_number_validate'),
     '#states' => array(
       'invisible' => array(
@@ -142,8 +142,8 @@ function buzzer_admin_form($form, &$form_state) {
  * Element validator for the phone number field.
  */
 function buzzer_sms_number_validate($element, &$form_state, $form) {
-  if ($number = twilio_validate_number($element['#value'], FALSE)) {
-    $form_state['values']['twilio_number'] = $number;
+  if ($number = twilio_validate_number($element['#value'], TRUE)) {
+    $form_state['values']['buzzer_sms_number'] = $number;
   }
   else {
     form_error($element, t('You must enter a valid 10 digit phone number'));
